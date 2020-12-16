@@ -24,6 +24,10 @@ dependencies:
 - text
 - split
 - sort
+- vector
+- array
+- containers
+- parsec
 
 # extra-deps:
 # - unique-0.4.7.8

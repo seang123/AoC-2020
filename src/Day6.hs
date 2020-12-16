@@ -4,7 +4,6 @@ module Day6(
 
 import System.IO ()
 import Data.List.Split
-import Data.Sort ( sort )
 import Data.List
 
 -- intersection between a list of elments
