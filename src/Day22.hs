@@ -10,7 +10,7 @@ import qualified Data.Set as S
 
 -- calculate the output value
 sum_ :: (Num a, Enum a) => [a] -> a
-sum_ xs = sum $ zipWith (*) xs (reverse $ take (length xs) [1..])
+sum_ xs = sum $ zipWith (*) [1..] $ reverse xs
 
 -- Part 1
 play :: [Int] -> [Int] -> Int
@@ -24,44 +24,24 @@ play dA dB =
         play' [] y = Just y
         play' x [] = Just x
         play' (x:xs) (y:ys)
-            | x > y = play' (xs ++ [x] ++ [y]) ys
-            | x < y = play' xs (ys ++ [y] ++ [x]) 
+            | x > y = play' (xs ++ [x, y]) ys
+            | x < y = play' xs (ys ++ [y, x]) 
             | otherwise = Nothing -- shouldn't trigger according to rule 
 
 -- Part 2
-data Output = Output Int [(Int, Int)]
-
-playRec :: [Int] -> [Int] -> [(Int, Int)] -> Int
-playRec [] ys _ = sum_ ys
-playRec xs [] _ = sum_ xs
+playRec :: [Int] -> [Int] -> [([Int], [Int])] -> (Int,Int)
+playRec xs [] _ = (sum_ xs, 1)
+playRec [] ys _ = (sum_ ys, 2)
 playRec (x:xs) (y:ys) zs 
-    | winner == 1 && x > y = playRec (xs ++ [x] ++ [y]) ys new_zs
-    | winner == 1 && x < y = playRec (xs ++ [y] ++ [x]) ys new_zs
-    | winner == 2 && x > y = playRec xs (ys ++ [x] ++ [y]) new_zs
-    | winner == 2 && x < y = playRec xs (ys ++ [y] ++ [x]) new_zs
-    | otherwise = 0
-    where 
-        Output winner nzs = playRec' (x:xs) (y:ys) zs
-        new_zs = nub (zs ++ nzs ++ [(x,y)])
-
--- ret: 1 if p1 wins or 2 if p2 wins
-playRec' :: [Int] -> [Int] -> [(Int, Int)] -> Output
-playRec' xs [] zs = Output 1 zs
-playRec' [] ys zs = Output 2 zs
-playRec' (x:xs) (y:ys) zs 
-    | (x,y) `elem` zs = Output 1 (zs ++ [(x,y)]) -- rule 1
-    | x < length xs = if x > y then Output 1 (zs ++ [(x,y)]) else Output 2 (zs ++ [(x,y)])
-    | y < length ys = if x > y then Output 1 (zs ++ [(x,y)]) else Output 2 (zs ++ [(x,y)])
-    | otherwise = playRec' (take x xs) (take y ys) (zs ++ [(x,y)]) -- rec case
-
-
+    | (x:xs,y:ys) `elem` zs = (sum_ xs, 1)
+    | x > length xs || y > length ys = if x > y then playRec (xs ++ [x,y]) ys (zs ++ [(x:xs, y:ys)])
+                                        else playRec xs (ys++[y,x]) (zs ++ [(x:xs, y:ys)])
+    | otherwise = case playRec (take x xs) (take y ys) [] of
+                    (_, 1) -> playRec (xs ++ [x,y]) ys (zs ++ [(x:xs, y:ys)])
+                    (_, 2) -> playRec xs (ys++[y,x]) (zs ++ [(x:xs, y:ys)])
 
 -- >>> day22 ".\\Data\\Day14\\day14.txt"
--- 1 -> 30780
--- 291== -> 272
--- 2 -> 31551
--- Done.
---
+-- ProgressCancelledException
 day22 :: String -> IO ()
 day22 fileName = do
         content <- readFile fileName
@@ -74,7 +54,7 @@ day22 fileName = do
         let testA = [9, 2, 6, 3, 1]
         let testB = [5, 8, 4, 7, 10] -- expect output == 291
         -- Part 2
-        putStrLn $ "291 == " ++ show ( playRec testA testB [] )
+        putStrLn $ "Test (should = 291) " ++ show ( playRec testA testB [] )
         putStrLn $ "2 -> " ++ show ( playRec deckA deckB [] )
 
 
