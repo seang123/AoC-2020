@@ -14,5 +14,7 @@ import Day10
 
 import Day14
 
+import Day22
+
 main :: IO ()
-main = day14 ".\\Data\\Day14\\day14.txt"
+main = day22 ".\\Data\\Day14\\day14.txt"

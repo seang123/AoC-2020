@@ -13,14 +13,17 @@ import qualified Data.IntMap as IM
 import Data.Maybe ( isJust, fromJust )
 import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Token as P
-import Text.ParserCombinators.Parsec.Language
+import Text.ParserCombinators.Parsec.Language ()
+import qualified Text.Parsec.Token as T
+
+
 -- 1. Convet int to 36 digit binary string
 -- 2. Apply mask to binary string
 -- 3. Convert new binary string to Int
--- 4. Create IntMap (dictionary) where the memory loc is key
+-- 4. Create IntMap (dictionary) where the valuesory loc is key
 
 
--- newtype Memory = Memory (IntMap Int)
+-- newtype valuesory = valuesory (IntMap Int)
 
 toBin :: Int -> [Int]
 toBin 0 = [0]
@@ -48,13 +51,6 @@ applyMask (x:xs) (y:ys) acc
     | x == '1' = applyMask xs ys (acc ++ "1")
     | otherwise = applyMask xs ys (acc ++ [y])
 
-
-loop :: [String] -> Int
-loop = undefined
-
-main :: [[String]] -> IM.IntMap Int -> IM.IntMap Int
-main (x:xs) = undefined
-
 ------------
 -- Parser --
 ------------
@@ -65,33 +61,57 @@ number = do{ ds <- many1 digit
             }
             <?> "number"
 
-mem :: Parser Integer
-mem = do{ letter
-        ; do{ 
+-- given a string: "values[17610] = 1035852"; returns a tuple of the two numbers
+values :: Parser (Integer, Integer)
+values = do{ letter
+        ; do{
             char '['
-            ; number
+            ; c <- number
+            ; do{ char ']'
+                ; do{ string " = " 
+                ; cc <- number
+                ; return (c,cc)
+                }
             }
-        <|> mem
-        }  
+            }
+        <|> values
+        } 
 
--- >>>  parseTest mem "mem[17610] = 1035852"
--- *** Exception: C:\Users\giess\OneDrive\Documents\MyProjects\AdventOfCode2020\aoc\src\Day14.hs:72:15-23: error:
---     * Couldn't match expected type `Text.Parsec.Prim.ParsecT
---                                       String () Data.Functor.Identity.Identity Integer'
---                   with actual type `P.GenTokenParser s0 u0 m0
---                                     -> Text.Parsec.Prim.ParsecT s0 u0 m0 Integer'
---     * Probable cause: `P.integer' is applied to too few arguments
---       In a stmt of a 'do' block: P.integer
---       In the first argument of `(<|>)', namely
---         `do char '['
---             P.integer'
---       In a stmt of a 'do' block:
---         do char '['
---            P.integer
---           <|> mem
--- (deferred type error)
+-- return mask as string
+maskP :: Parser String
+maskP = do{ string "mask = "
+        ; many1 (char 'X' <|> digit)
+        } 
+
+
+run :: Show a => Parser a -> String -> IM.IntMap Int -> IO ()
+run p input memory = print 5
+
+-- >>>  parseTest values "mem[17610] = 1035852"
+-- (17610,1035852)
 --
 
+-- >>>  parseTest maskP "mask = 11110100010101111011001X0100XX00100X"
+-- "11110100010101111011001X0100XX00100X"
+--
+
+------------
+-- Main --
+------------
+
+-- loop :: [String] -> IO Int
+-- loop xs = do
+--         let i = head xs -- mask element
+--         let mask = parseTest maskP i -- mask string
+--         let memory = map (parseTest values) (tail xs)
+
+--         putStrLn memory
+
+--         return 4 
+        
+
+-- main :: [[String]] -> IM.IntMap Int -> IO Int
+-- main (x:xs) _ = loop x
 
 
 -- >>> day14 ".\\Data\\Day14\\day14.txt"
@@ -102,17 +122,19 @@ day14 :: String -> IO ()
 day14 fileName = do
         content <- readFile fileName
 
-        -- Split data into chunks of 1 mask and n memory assignments
+        -- Split data into chunks of 1 mask and n valuesory assignments
         let chunks = map lines $ split (startsWith "mask") content
         print $ take 2 chunks
 
         -- Part 1
-        let out = main chunks IM.empty
+        -- let out = main chunks IM.empty
+
+        temp <- parseTest maskP "mask = 11110100010101111011001X0100XX00100X"
 
 
         -- Test
-        -- let memory = IM.insert 5 1 IM.empty
-        -- let x = memory IM.!? 5
+        -- let valuesory = IM.insert 5 1 IM.empty
+        -- let x = valuesory IM.!? 5
         -- print $ fromJust x
 
         putStrLn "Done."
